@@ -40,7 +40,7 @@
 # ============================================================================== 
 
 # ---- 0. PACKAGES --------------------------------------------------------------
-required <- c("readxl", "dplyr", "purrr", "stringr", "tidyr", "tibble", "rstan")
+required <- c("readxl", "dplyr", "purrr", "stringr", "tidyr", "tibble", "rstan", "readr", "ggplot2")
 missing_pkgs <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing_pkgs) > 0) {
   stop("Install required packages first: ", paste(missing_pkgs, collapse = ", "))
@@ -451,13 +451,19 @@ site_use <- bind_rows(
 write.csv(site_use, "loris_segment_posterior_use_v2.csv", row.names = FALSE)
 
 # ---- 14. CONVERGENCE / SAMPLER CHECK ------------------------------------------
-check_fit <- function(fit, label) {
+check_fit <- function(fit, label, max_treedepth) {
   s <- summary(fit)$summary
   sampler <- get_sampler_params(fit, inc_warmup = FALSE)
-  div_all <- sum(vapply(sampler, function(x) sum(x[, "divergent__"]), numeric(1)))
+
+  div_all <- sum(vapply(
+    sampler,
+    function(x) sum(x[, "divergent__"]),
+    numeric(1)
+  ))
+
   treedepth_hits <- sum(vapply(
     sampler,
-    function(x) sum(x[, "treedepth__"] >= 12),
+    function(x) sum(x[, "treedepth__"] >= max_treedepth),
     numeric(1)
   ))
 
@@ -465,12 +471,12 @@ check_fit <- function(fit, label) {
   cat("Max Rhat                :", max(s[, "Rhat"], na.rm = TRUE), "\n")
   cat("Min n_eff               :", min(s[, "n_eff"], na.rm = TRUE), "\n")
   cat("Total divergences       :", div_all, "\n")
-  cat("Treedepth >= 12 draws   :", treedepth_hits, "\n")
+  cat("Max-treedepth hits      :", treedepth_hits, "\n")
 }
 
-check_fit(fit_nonspatial, "NON-SPATIAL")
-check_fit(fit_re,         "TRANSECT RANDOM INTERCEPT — PRIMARY")
-check_fit(fit_ar1,        "AR1 — SPATIAL SENSITIVITY")
+check_fit(fit_nonspatial, "NON-SPATIAL", 12L)
+check_fit(fit_re,         "TRANSECT RANDOM INTERCEPT — PRIMARY", 13L)
+check_fit(fit_ar1,        "AR1 — SPATIAL SENSITIVITY", 13L)
 
 cat("\nIMPORTANT INTERPRETATION NOTES\n")
 cat("1. Good Rhat/ESS indicates computational convergence, not ecological identifiability.\n")
@@ -518,7 +524,7 @@ fig_main <- param %>%
     axis.text.x = element_text(angle = 25, hjust = 1)
   )
 
-ggsave("Figure1_parallel_coefficients.png", fig_main, width = 10.5, height = 4.2, dpi = 300)
+ggsave("Figure3_parallel_coefficients.png", fig_main, width = 10.5, height = 4.2, dpi = 300)
 fig_main
 
 dirprob <- read_csv("loris_directional_posterior_probabilities_v2.csv")
@@ -657,5 +663,6 @@ summ_prob <- function(x) {
     q[2], q[1], q[3]
   )
 }
-
+capture.output(sessionInfo(), file = "sessionInfo.txt")
+cat("\nSession information written to sessionInfo.txt\n")
 
