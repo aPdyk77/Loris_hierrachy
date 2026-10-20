@@ -489,42 +489,96 @@ cat("   an association rather than a causal river-distance effect.\n")
 cat("6. Peat dryness is strongly aligned with visit in these data. Do not include peat and\n")
 cat("   visit simultaneously in the primary sparse-data model.\n")
 
-library(readr)
-library(dplyr)
 library(ggplot2)
+library(dplyr)
+library(readr)
 
-param <- read_csv("loris_model_parameter_summary_v2.csv")
+param <- read_csv("loris_model_parameter_summary_v2.csv", show_col_types = FALSE)
 
-fig_main <- param %>%
+# data koefisien utama untuk Figure 3
+fig_main_df <- param %>%
   filter(parameter %in% c("beta_dist", "gamma_ves", "gamma_sept")) %>%
   mutate(
     model = factor(model, levels = c("Non-spatial", "Transect RE", "AR1")),
     parameter = factor(
       parameter,
       levels = c("beta_dist", "gamma_ves", "gamma_sept"),
-      labels = c("Distance from riverbed",
-                 "VES vs Point Count",
-                 "September vs July")
+      labels = c(
+        "Distance from riverbed",
+        "VES vs Point Count",
+        "September vs July"
+      )
     )
-  ) %>%
-  ggplot(aes(x = model, y = median)) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.6) +
-  geom_errorbar(aes(ymin = q2.5, ymax = q97.5), width = 0.12, linewidth = 0.8) +
-  geom_point(size = 2.5) +
+  )
+
+# mean antar-formulasi model pada tiap parameter
+fig_main_mean <- fig_main_df %>%
+  group_by(parameter) %>%
+  summarise(overall_mean = mean(mean), .groups = "drop")
+
+fig_main <- ggplot(fig_main_df, aes(x = model, y = mean)) +
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    linewidth = 0.6,
+    colour = "grey35"
+  ) +
+  geom_hline(
+    data = fig_main_mean,
+    aes(yintercept = overall_mean),
+    inherit.aes = FALSE,
+    linetype = "dashed",
+    linewidth = 0.7,
+    colour = "#d62728"
+  ) +
+  geom_errorbar(
+    aes(ymin = q2.5, ymax = q97.5),
+    width = 0.08,
+    linewidth = 0.8,
+    colour = "#1f77b4"
+  ) +
+  geom_point(
+    size = 2.6,
+    colour = "#1f77b4"
+  ) +
   facet_wrap(~ parameter, nrow = 1, scales = "free_y") +
   labs(
     x = "Model formulation",
-    y = "Posterior estimate (log-odds)",
-    title = "Comparison of core posterior coefficients across model formulations"
+    y = "Posterior estimate (log-odds)"
   ) +
-  theme_bw(base_size = 12) +
+  theme_bw(base_size = 11) +
   theme(
-    strip.background = element_rect(fill = "white"),
+    plot.title = element_blank(),
+    plot.subtitle = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold", size = 11, colour = "black"),
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 25, hjust = 1)
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text.x = element_text(angle = 25, hjust = 1, vjust = 1, colour = "black"),
+    axis.text.y = element_text(colour = "black"),
+    axis.title = element_text(colour = "black"),
+    legend.position = "none"
   )
 
-ggsave("Figure3_parallel_coefficients.png", fig_main, width = 10.5, height = 4.2, dpi = 300)
+ggsave(
+  "Figure3_parallel_coefficients_journal_ready.png",
+  fig_main,
+  width = 10.2,
+  height = 3.7,
+  dpi = 300,
+  bg = "white"
+)
+
+ggsave(
+  "Figure3_parallel_coefficients_journal_ready.pdf",
+  fig_main,
+  width = 10.2,
+  height = 3.7,
+  bg = "white"
+)
+
 fig_main
 
 dirprob <- read_csv("loris_directional_posterior_probabilities_v2.csv")
