@@ -101,7 +101,7 @@ RStan requires a working C++ toolchain compatible with the local R installation.
 5. Run:
 
 ```r
-source("Updated loris_analysis_v2.R")
+source("loris_analysis_v2.R")
 ```
 
 The script uses fixed random seeds for the three model formulations.
@@ -127,6 +127,7 @@ The workflow writes, among others:
 - `loris_posterior_predictive_summary_v2.csv`
 - `loris_segment_posterior_use_v2.csv`
 - `Figure3_parallel_coefficients.png`
+- `Figure3_parallel_coefficients.pdf`
 - `FigureS1_directional_probabilities.png`
 - `FigureS2_posterior_predictive_checks.png`
 - `FigureS3_variance_autocorrelation.png`
