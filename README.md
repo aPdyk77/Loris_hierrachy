@@ -101,7 +101,7 @@ RStan requires a working C++ toolchain compatible with the local R installation.
 5. Run:
 
 ```r
-source("loris_analysis_v2.R")
+source("Updated loris_analysis_v2.R")
 ```
 
 The script uses fixed random seeds for the three model formulations.
