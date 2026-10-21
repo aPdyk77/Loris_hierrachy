@@ -99,12 +99,12 @@ read_transect_sheet <- function(sheet_name) {
     na = c("", "NA")
   ) %>%
     select(1:10)
-
+  
   names(x) <- c(
     "transect_raw", "rep", "date", "station", "time_block",
     "peat", "cloud", "loris", "stopwatch", "notes"
   )
-
+  
   x %>%
     mutate(
       source_sheet = sheet_name,
@@ -454,19 +454,19 @@ write.csv(site_use, "loris_segment_posterior_use_v2.csv", row.names = FALSE)
 check_fit <- function(fit, label, max_treedepth) {
   s <- summary(fit)$summary
   sampler <- get_sampler_params(fit, inc_warmup = FALSE)
-
+  
   div_all <- sum(vapply(
     sampler,
     function(x) sum(x[, "divergent__"]),
     numeric(1)
   ))
-
+  
   treedepth_hits <- sum(vapply(
     sampler,
     function(x) sum(x[, "treedepth__"] >= max_treedepth),
     numeric(1)
   ))
-
+  
   cat("\n", label, "\n", sep = "")
   cat("Max Rhat                :", max(s[, "Rhat"], na.rm = TRUE), "\n")
   cat("Min n_eff               :", min(s[, "n_eff"], na.rm = TRUE), "\n")
@@ -493,13 +493,19 @@ library(ggplot2)
 library(dplyr)
 library(readr)
 
-param <- read_csv("loris_model_parameter_summary_v2.csv", show_col_types = FALSE)
+param <- read_csv(
+  "loris_model_parameter_summary_v2.csv",
+  show_col_types = FALSE
+)
 
-# data koefisien utama untuk Figure 3
+# Figure 3 reproduction
 fig_main_df <- param %>%
   filter(parameter %in% c("beta_dist", "gamma_ves", "gamma_sept")) %>%
   mutate(
-    model = factor(model, levels = c("Non-spatial", "Transect RE", "AR1")),
+    model = factor(
+      model,
+      levels = c("Non-spatial", "Transect RE", "AR1")
+    ),
     parameter = factor(
       parameter,
       levels = c("beta_dist", "gamma_ves", "gamma_sept"),
@@ -511,14 +517,26 @@ fig_main_df <- param %>%
     )
   )
 
-# mean antar-formulasi model pada tiap parameter
+# Mean for each coefficient
+fig_main_mean <- fig_main_df %>%
+  group_by(parameter) %>%
+  summarise(
+    overall_mean = mean(mean),
+    .groups = "drop"
+  )
+
+# Grayscale Figure 3
 fig_main <- ggplot(fig_main_df, aes(x = model, y = mean)) +
+  
+  # Reference line: zero effect
   geom_hline(
     yintercept = 0,
     linetype = "dashed",
     linewidth = 0.6,
     colour = "grey60"
   ) +
+  
+  # Mean estimate across model formulations
   geom_hline(
     data = fig_main_mean,
     aes(yintercept = overall_mean),
@@ -527,39 +545,61 @@ fig_main <- ggplot(fig_main_df, aes(x = model, y = mean)) +
     linewidth = 0.8,
     colour = "grey20"
   ) +
+  
+  # 95% credible intervals
   geom_errorbar(
     aes(ymin = q2.5, ymax = q97.5),
     width = 0.08,
     linewidth = 0.8,
     colour = "black"
   ) +
+  
+  # Posterior means
   geom_point(
     size = 2.6,
     colour = "black"
   ) +
-  facet_wrap(~ parameter, nrow = 1, scales = "free_y") +
+  
+  facet_wrap(
+    ~ parameter,
+    nrow = 1,
+    scales = "free_y"
+  ) +
+  
   labs(
     x = "Model formulation",
     y = "Posterior estimate (log-odds)"
   ) +
+  
   theme_bw(base_size = 11) +
+  
   theme(
     plot.title = element_blank(),
     plot.subtitle = element_blank(),
     strip.background = element_blank(),
-    strip.text = element_text(face = "bold", size = 11, colour = "black"),
+    strip.text = element_text(
+      face = "bold",
+      size = 11,
+      colour = "black"
+    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.text.x = element_text(angle = 25, hjust = 1, vjust = 1, colour = "black"),
+    axis.text.x = element_text(
+      angle = 25,
+      hjust = 1,
+      vjust = 1,
+      colour = "black"
+    ),
     axis.text.y = element_text(colour = "black"),
     axis.title = element_text(colour = "black"),
     legend.position = "none"
   )
 
+# Export
 ggsave(
-  "Figure3_parallel_coefficients_journal_ready.png",
+  "Figure3_parallel_coefficients.png",
   fig_main,
   width = 10.2,
   height = 3.7,
@@ -568,7 +608,7 @@ ggsave(
 )
 
 ggsave(
-  "Figure3_parallel_coefficients_journal_ready.pdf",
+  "Figure3_parallel_coefficients.pdf",
   fig_main,
   width = 10.2,
   height = 3.7,
@@ -576,6 +616,8 @@ ggsave(
 )
 
 fig_main
+
+
 
 dirprob <- read_csv("loris_directional_posterior_probabilities_v2.csv")
 
@@ -715,4 +757,3 @@ summ_prob <- function(x) {
 }
 capture.output(sessionInfo(), file = "sessionInfo.txt")
 cat("\nSession information written to sessionInfo.txt\n")
-
