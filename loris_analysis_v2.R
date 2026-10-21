@@ -512,34 +512,30 @@ fig_main_df <- param %>%
   )
 
 # mean antar-formulasi model pada tiap parameter
-fig_main_mean <- fig_main_df %>%
-  group_by(parameter) %>%
-  summarise(overall_mean = mean(mean), .groups = "drop")
-
 fig_main <- ggplot(fig_main_df, aes(x = model, y = mean)) +
   geom_hline(
     yintercept = 0,
     linetype = "dashed",
     linewidth = 0.6,
-    colour = "grey35"
+    colour = "grey60"
   ) +
   geom_hline(
     data = fig_main_mean,
     aes(yintercept = overall_mean),
     inherit.aes = FALSE,
     linetype = "dashed",
-    linewidth = 0.7,
-    colour = "#d62728"
+    linewidth = 0.8,
+    colour = "grey20"
   ) +
   geom_errorbar(
     aes(ymin = q2.5, ymax = q97.5),
     width = 0.08,
     linewidth = 0.8,
-    colour = "#1f77b4"
+    colour = "black"
   ) +
   geom_point(
     size = 2.6,
-    colour = "#1f77b4"
+    colour = "black"
   ) +
   facet_wrap(~ parameter, nrow = 1, scales = "free_y") +
   labs(
